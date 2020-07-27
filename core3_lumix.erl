@@ -1,5 +1,5 @@
 %build instructions for bob
--module('core3_lg_air').
+-module('core3_lumix').
 
 -export([compile/2, test/2 , tagCreated/2]).
 
