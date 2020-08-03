@@ -89,18 +89,22 @@ handle_info({publish, #{topic := <<"ha/lumix/out/", DeviceId:12/binary, "/R", Ve
 			%ep 1 has the regular control clusters and the reference temperature
 			devdb:addDeviceEP(BMAC, BMAC, <<1>>, ?ROC_PROFILEID, #{},
 				#{<<16#0000:16>> => #{<<16#0004:16>> => <<"ROC">>, <<16#0005:16>> => <<"LUMIX_MQTT">>, <<16#0006:16>> => Version},
-					?ZigBEE_ClusterID_Level_Control => #{<<16#0000:16>> => 0},
-					?ZigBEE_ClusterID_On_Off => #{<<16#0000:16>> => true
-					}}, #{}, lumix_actions),
+					?ROC_CLUSTER_ID_CAMERA_VIDEO => cluster_default(?ROC_CLUSTER_ID_CAMERA_VIDEO),
+					?ROC_CLUSTER_ID_CAMERA_CONTROL => cluster_default(?ROC_CLUSTER_ID_CAMERA_CONTROL)
+
+					%	?ZigBEE_ClusterID_Level_Control => #{<<16#0000:16>> => 0},
+					%	?ZigBEE_ClusterID_On_Off => #{<<16#0000:16>> => true}
+				}, #{}, lumix_actions),
 
 			devWorker:spawn_worker(BMAC, BMAC),
 			gagent:send_new_device_report(BMAC);
 		C ->
-			EP = 1,
-			devReport:sendAttrReport(incapstate, <<BMAC/binary, EP, ?ZigBEE_ClusterID_On_Off:2/binary>>, [
-				#{id => <<16#0000:16>>, val => val_bool, val_bool => true}]),
-			devReport:sendAttrReport(incapstate, <<BMAC/binary, EP, ?ZigBEE_ClusterID_Level_Control:2/binary>>, [
-				#{id => <<16#0000:16>>, val => val_int, val_int => 0}])
+			ok
+%%			EP = 1,
+%%			devReport:sendAttrReport(incapstate, <<BMAC/binary, EP, ?ZigBEE_ClusterID_On_Off:2/binary>>, [
+%%				#{id => <<16#0000:16>>, val => val_bool, val_bool => true}]),
+%%			devReport:sendAttrReport(incapstate, <<BMAC/binary, EP, ?ZigBEE_ClusterID_Level_Control:2/binary>>, [
+%%				#{id => <<16#0000:16>>, val => val_int, val_int => 0}])
 	end,
 	{noreply, State};
 
@@ -127,3 +131,31 @@ stop() ->
 
 
 %
+%%Utility default cluster generator
+
+cluster_default(?ROC_CLUSTER_ID_CAMERA_VIDEO) ->
+	#{
+		<<16#0001:16>> => <<"SD">>,
+		<<16#0002:16>> => false,
+		<<16#0003:16>> => false,
+		<<16#0004:16>> => true,
+		<<16#0005:16>> => 50,
+		<<16#0006:16>> => false,
+		<<16#0008:16>> => false,
+		<<16#000A:16>> => false,
+		<<16#0010:16>> => 0
+	};
+
+cluster_default(?ROC_CLUSTER_ID_CAMERA_CONTROL) ->
+	#{
+		<<16#0000:16>> => 50,
+		<<16#0001:16>> => 50,
+		<<16#0002:16>> => 100,
+		<<16#0003:16>> => 0,
+		<<16#0004:16>> => 100,
+		<<16#0005:16>> => 0,
+		<<16#0006:16>> => 1,
+		<<16#0007:16>> => true
+	};
+cluster_default(_) ->
+	#{}.
