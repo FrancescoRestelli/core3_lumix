@@ -87,14 +87,17 @@ handle_info({publish, #{topic := <<"ha/lumix/out/", DeviceId:12/binary, "/R", Ve
 	case db:value(devices, BMAC) of
 		notfound -> ?yellow("device not found autocreate"),
 			%ep 1 has the regular control clusters and the reference temperature
-			devdb:addDeviceEP(BMAC, BMAC, <<1>>, ?ROC_PROFILEID, #{},
-				#{<<16#0000:16>> => #{<<16#0004:16>> => <<"ROC">>, <<16#0005:16>> => <<"LUMIX_MQTT">>, <<16#0006:16>> => Version},
+			devdb:addDeviceEP(BMAC, BMAC, <<1>>, ?ROC_PROFILEID, #{}, #{
+				<<16#0000:16>> => #{<<16#0004:16>> => <<"ROC">>, <<16#0005:16>> => <<"LUMIX_MQTT">>, <<16#0006:16>> => Version},
+				?ZigBEE_ClusterID_On_Off=>#{<<16#0000:16>>=>false}
+			},
+			#{
 					?ROC_CLUSTER_ID_CAMERA_VIDEO => cluster_default(?ROC_CLUSTER_ID_CAMERA_VIDEO),
 					?ROC_CLUSTER_ID_CAMERA_CONTROL => cluster_default(?ROC_CLUSTER_ID_CAMERA_CONTROL)
 
 					%	?ZigBEE_ClusterID_Level_Control => #{<<16#0000:16>> => 0},
 					%	?ZigBEE_ClusterID_On_Off => #{<<16#0000:16>> => true}
-				}, #{}, lumix_actions),
+				},  lumix_actions),
 
 			devWorker:spawn_worker(BMAC, BMAC),
 			gagent:send_new_device_report(BMAC);
