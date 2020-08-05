@@ -36,16 +36,16 @@ init(_) ->
 	ChildSpecs = [
 
 		#{
-			id => lg_air_multiplex,
-			modules => [lg_air_multiplex],
+			id => lumix_multiplex,
+			modules => [lumix_multiplex],
 			restart => permanent,
 			shutdown => 1000,
-			start => {lg_air_multiplex, start_link, []},
+			start => {lumix_multiplex, start_link, []},
 			type => worker
 		}
 
 	],
-	?cyan("<lg_air_multiplex/> <ySUPERVISOR init/> starting~n ~p", [ChildSpecs]),
+	?cyan("<lumix_multiplex/> <ySUPERVISOR init/> starting~n ~p", [ChildSpecs]),
 	{ok, {SupFlags, ChildSpecs}}.
 
 add(#{id := ChildID} = ChildSpec) ->

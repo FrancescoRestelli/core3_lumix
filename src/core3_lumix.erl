@@ -20,7 +20,7 @@
 %%%===================================================================
 
 start(_StartType, _StartArgs) ->
- core3_lg_air_sup:start_link().
+ core3_lumix_sup:start_link().
 
 
 stop(_State) ->
