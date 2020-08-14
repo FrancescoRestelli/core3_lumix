@@ -47,7 +47,7 @@ init(_Args) ->
 	QoS = 1,
 	%we subscribe here to any device on this topic
 	{ok, _Props, _ReasonCodes} = emqtt:subscribe(C, {<<"ha/lumix/out/#">>, QoS}),
-
+	?yellow("mqtt started~n~p",[C]),
 	{ok, #{mqttc => C, seq => 1}}.
 
 % event handling

@@ -263,13 +263,13 @@ clusterCmds(MAC, NodeID, EP, State, _Json, ?ZigBEE_ClusterID_On_Off, ?ZigBEE_Clu
 	SMAC = utils_data_format:bin_to_hex(MAC),
 	?green("CluserCmd MAC: ~p NodeID: ~p EP: ~p ClusterID: ~p CmdID: ~p", [SMAC, NodeID, EP, onoff, on]),
 	TS = list_to_binary(integer_to_list(trunc(utils_time:timestamp(integer) / 1000000))),
-	lg_air_multiplex:send_to_device(<<SMAC/binary,"/P">>, <<"1">>),
+	lumix_multiplex:send_to_device(<<SMAC/binary,"/P">>, <<"1">>),
 	{<<0>>, State};
 
 clusterCmds(MAC, NodeID, EP, State, _Json, ?ZigBEE_ClusterID_On_Off, ?ZigBEE_ClusterID_On_Off_CMD_OFF) ->
 	SMAC= utils_data_format:bin_to_hex(MAC),
 	?green("CluserCmd MAC: ~p NodeID: ~p EP: ~p ClusterID: ~p CmdID: ~p", [SMAC, NodeID, EP, onoff, off]),
-	lg_air_multiplex:send_to_device(<<SMAC/binary, "/P">>, <<"0">>),
+	lumix_multiplex:send_to_device(<<SMAC/binary, "/P">>, <<"0">>),
 	{<<0>>, State};
 
 
@@ -283,7 +283,7 @@ clusterCmds(MAC, NodeID, EP, State, _Json, ?ZigBEE_ClusterID_Level_Control, CmdI
 	SMAC= utils_data_format:bin_to_hex(MAC),
 	?green("CluserCmd MAC: ~p NodeID: ~p EP: ~p ClusterID: ~p CmdID: ~p Value:~p", [SMAC, NodeID, EP, CmdID, Value]),
 	TS = list_to_binary(integer_to_list(trunc(utils_time:timestamp(integer) / 1000000))),
-	lg_air_multiplex:send_to_device(<<SMAC/binary, "/P">>, <<"1">>),
+	lumix_multiplex:send_to_device(<<SMAC/binary, "/P">>, <<"1">>),
 	{<<0>>, State};
 
 clusterCmds(MAC, NodeID, EP, State, _Json, BClusterID, BCMDID, BValue) ->
