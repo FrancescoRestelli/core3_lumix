@@ -281,7 +281,7 @@ clusterCmds(MAC, NodeID, EP, State, _Json, BClusterID, BCMDID) ->
 	{<<BCMDID/binary>>, State}.
 
 
-clusterCmds(MAC, NodeID, EP, State, _Json, ?ZigBEE_ClusterID_Level_Control, CmdID, <<Level:1/binary, _/binary>>) ->
+clusterCmds(MAC, NodeID, EP, State, _Json, ?ZigBEE_ClusterID_Level_Control, CmdID, <<Level:1/binary, _/binary>>=Value) ->
 	SMAC= utils_data_format:bin_to_hex(MAC),
 	SEP = utils_data_format:bin_to_hex(EP),
 	IntDimmLevel = binary:decode_unsigned(Level),
