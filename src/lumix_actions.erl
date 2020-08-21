@@ -281,12 +281,13 @@ clusterCmds(MAC, NodeID, EP, State, _Json, BClusterID, BCMDID) ->
 	{<<BCMDID/binary>>, State}.
 
 
-clusterCmds(MAC, NodeID, EP, State, _Json, ?ZigBEE_ClusterID_Level_Control, CmdID, Value) ->
+clusterCmds(MAC, NodeID, EP, State, _Json, ?ZigBEE_ClusterID_Level_Control, CmdID, <<Level:1/binary, _/binary>>) ->
 	SMAC= utils_data_format:bin_to_hex(MAC),
 	SEP = utils_data_format:bin_to_hex(EP),
+	IntDimmLevel = binary:decode_unsigned(Level),
 	?green("CluserCmd MAC: ~p NodeID: ~p EP: ~p ClusterID: ~p CmdID: ~p Value:~p", [SMAC, NodeID, EP, CmdID, Value]),
 	TS = list_to_binary(integer_to_list(trunc(utils_time:timestamp(integer) / 1000000))),
-	lumix_multiplex:send_to_device(<<SMAC/binary,"/",SEP/binary, "/L">>, Value),
+	lumix_multiplex:send_to_device(<<SMAC/binary,"/",SEP/binary, "/L">>, IntDimmLevel),
 	{<<0>>, State};
 
 clusterCmds(MAC, NodeID, EP, State, _Json, BClusterID, BCMDID, BValue) ->
