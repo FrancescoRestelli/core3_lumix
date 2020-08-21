@@ -89,7 +89,8 @@ handle_info({publish, #{topic := <<"ha/lumix/out/", DeviceId:12/binary, "/R", Ve
 			%ep 1 has the regular control clusters and the reference temperature
 			devdb:addDeviceEP(BMAC, BMAC, <<1>>, ?ROC_PROFILEID, #{}, #{
 				<<16#0000:16>> => #{<<16#0004:16>> => <<"ROC">>, <<16#0005:16>> => <<"LUMIX_MQTT">>, <<16#0006:16>> => Version},
-				?ZigBEE_ClusterID_On_Off=>#{<<16#0000:16>>=>false}
+				?ZigBEE_ClusterID_On_Off=>#{<<16#0000:16>>=>false},
+				?ZigBEE_ClusterID_Level_Control=>#{<<16#0000:16>>=>0}	
 			},
 			#{
 					?ROC_CLUSTER_ID_CAMERA_VIDEO => cluster_default(?ROC_CLUSTER_ID_CAMERA_VIDEO),
@@ -98,6 +99,19 @@ handle_info({publish, #{topic := <<"ha/lumix/out/", DeviceId:12/binary, "/R", Ve
 					%	?ZigBEE_ClusterID_Level_Control => #{<<16#0000:16>> => 0},
 					%	?ZigBEE_ClusterID_On_Off => #{<<16#0000:16>> => true}
 				},  lumix_actions),
+				%ep 2 dummy testing buttons
+			devdb:addDeviceEP(BMAC, BMAC, <<2>>, ?ROC_PROFILEID, #{}, #{
+				<<16#0000:16>> => #{<<16#0004:16>> => <<"ROC">>, <<16#0005:16>> => <<"LUMIX_MQTT">>, <<16#0006:16>> => Version},
+				?ZigBEE_ClusterID_On_Off=>#{<<16#0000:16>>=>false},
+				?ZigBEE_ClusterID_Level_Control=>#{<<16#0000:16>>=>0}						    
+			},#{},  lumix_actions),
+				%ep 3 more dummy buttons
+			devdb:addDeviceEP(BMAC, BMAC, <<3>>, ?ROC_PROFILEID, #{}, #{
+				<<16#0000:16>> => #{<<16#0004:16>> => <<"ROC">>, <<16#0005:16>> => <<"LUMIX_MQTT">>, <<16#0006:16>> => Version},
+				?ZigBEE_ClusterID_On_Off=>#{<<16#0000:16>>=>false},
+				?ZigBEE_ClusterID_Level_Control=>#{<<16#0000:16>>=>0}	
+			},
+			#{},  lumix_actions),
 
 			devWorker:spawn_worker(BMAC, BMAC),
 			gagent:send_new_device_report(BMAC);
