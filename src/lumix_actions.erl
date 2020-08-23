@@ -287,7 +287,7 @@ clusterCmds(MAC, NodeID, EP, State, _Json, ?ZigBEE_ClusterID_Level_Control, CmdI
 	IntDimmLevel = binary:decode_unsigned(Level),
 	?green("CluserCmd MAC: ~p NodeID: ~p EP: ~p ClusterID: ~p CmdID: ~p Value:~p", [SMAC, NodeID, EP, CmdID, Value]),
 	TS = list_to_binary(integer_to_list(trunc(utils_time:timestamp(integer) / 1000000))),
-	lumix_multiplex:send_to_device(<<SMAC/binary,"/",SEP/binary, "/L">>, IntDimmLevel),
+	lumix_multiplex:send_to_device(<<SMAC/binary,"/",SEP/binary, "/L">>, erlang:integer_to_binary(IntDimmLevel)),
 	{<<0>>, State};
 
 clusterCmds(MAC, NodeID, EP, State, _Json, BClusterID, BCMDID, BValue) ->
