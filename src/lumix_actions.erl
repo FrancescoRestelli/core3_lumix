@@ -271,7 +271,7 @@ clusterCmds(MAC, NodeID, EP, State, _Json, ?ZigBEE_ClusterID_On_Off, ?ZigBEE_Clu
 	SMAC= utils_data_format:bin_to_hex(MAC),
 	SEP = utils_data_format:bin_to_hex(EP),
 	?green("CluserCmd MAC: ~p NodeID: ~p EP: ~p ClusterID: ~p CmdID: ~p", [SMAC, NodeID, EP, onoff, off]),
-	lumix_multiplex:send_to_device(<<SMAC/binary,"/",SEP/binary,"/P">>, <<"1">>),
+	lumix_multiplex:send_to_device(<<SMAC/binary,"/",SEP/binary,"/P">>, <<"0">>),
 	{<<0>>, State};
 
 
