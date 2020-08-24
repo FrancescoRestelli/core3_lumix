@@ -261,7 +261,7 @@ sendGeneralCmd(_, _MAC, _, #{<<"clusterId">> := ClusterID, <<"cmdId">> := CMDID}
 %curl -s "http://192.168.54.1:60606/A0C9A02BA64D/Server0/ddd"
 %curl -s "http://192.168.54.1/cam.cgi?mode=accctrl&type=req_acc&value=4D454930-0100-1000-8000-A0C9A02BA64D&value2=OZOM"
 %curl -s "http://192.168.54.1/cam.cgi?mode=getstate"
-clusterCmds(MAC, NodeID, <<1>>, State, _Json, ?ZigBEE_ClusterID_On_Off, ?ZigBEE_ClusterID_On_Off_CMD_ON) ->
+clusterCmds(MAC, NodeID, <<1>> = Ep, State, _Json, ?ZigBEE_ClusterID_On_Off, ?ZigBEE_ClusterID_On_Off_CMD_ON) ->
 	SMAC = utils_data_format:bin_to_hex(MAC),
 	SEP = utils_data_format:bin_to_hex(EP),
 	?green("CluserCmd MAC: ~p NodeID: ~p EP: ~p ClusterID: ~p CmdID: ~p", [SMAC, NodeID, EP, onoff, on]),
