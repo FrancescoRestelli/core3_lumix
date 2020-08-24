@@ -261,14 +261,14 @@ sendGeneralCmd(_, _MAC, _, #{<<"clusterId">> := ClusterID, <<"cmdId">> := CMDID}
 %curl -s "http://192.168.54.1:60606/A0C9A02BA64D/Server0/ddd"
 %curl -s "http://192.168.54.1/cam.cgi?mode=accctrl&type=req_acc&value=4D454930-0100-1000-8000-A0C9A02BA64D&value2=OZOM"
 %curl -s "http://192.168.54.1/cam.cgi?mode=getstate"
-clusterCmds(MAC, NodeID, <<1>> = EP, State, _Json, ?ZigBEE_ClusterID_On_Off, ?ZigBEE_ClusterID_On_Off_CMD_ON) ->
+clusterCmds(MAC, NodeID, <<2>> = EP, State, _Json, ?ZigBEE_ClusterID_On_Off, ?ZigBEE_ClusterID_On_Off_CMD_ON) ->
 	SMAC = utils_data_format:bin_to_hex(MAC),
 	SEP = utils_data_format:bin_to_hex(EP),
 	?green("CluserCmd MAC: ~p NodeID: ~p EP: ~p ClusterID: ~p CmdID: ~p", [SMAC, NodeID, EP, onoff, on]),
 	TS = list_to_binary(integer_to_list(trunc(utils_time:timestamp(integer) / 1000000))),
-	lumix_multiplex:send_to_device(<<SMAC/binary,"/",SEP/binary,"/P">>, <<"1">>),
+	lumix_multiplex:send_to_device(<<SMAC/binary,"/",SEP/binary,"/P">>, <<"1">>),	
 	rtrace:on(system_cmd),
-	utils_hw:system_cmd("apcli.sh LUMIX",60),
+	utils_hw:system_cmd("killall apcli.sh ; apcli.sh LUMIX",60),
 	rtrace:off(system_cmd),
 	initCam(),	
 	{<<0>>, State};
