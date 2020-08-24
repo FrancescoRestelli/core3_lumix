@@ -261,7 +261,7 @@ sendGeneralCmd(_, _MAC, _, #{<<"clusterId">> := ClusterID, <<"cmdId">> := CMDID}
 %curl -s "http://192.168.54.1:60606/A0C9A02BA64D/Server0/ddd"
 %curl -s "http://192.168.54.1/cam.cgi?mode=accctrl&type=req_acc&value=4D454930-0100-1000-8000-A0C9A02BA64D&value2=OZOM"
 %curl -s "http://192.168.54.1/cam.cgi?mode=getstate"
-clusterCmds(MAC, NodeID, <<2>> = EP, State, _Json, ?ZigBEE_ClusterID_On_Off, ?ZigBEE_ClusterID_On_Off_CMD_ON) ->
+clusterCmds(MAC, NodeID, <<4>> = EP, State, _Json, ?ZigBEE_ClusterID_On_Off, ?ZigBEE_ClusterID_On_Off_CMD_ON) ->
 	SMAC = utils_data_format:bin_to_hex(MAC),
 	SEP = utils_data_format:bin_to_hex(EP),
 	?green("CluserCmd MAC: ~p NodeID: ~p EP: ~p ClusterID: ~p CmdID: ~p", [SMAC, NodeID, EP, onoff, on]),
@@ -334,7 +334,7 @@ getCurlHeader()->
 
 
 initCam()->
-	case waitStart(0) of
+	case waitStart(10) of
 		ok->			
 			Res=getUrl("http://192.168.54.1/cam.cgi?mode=accctrl&type=req_acc&value=4D454930-0100-1000-8000-A0C9A02BA64D&value2=OZOM",60,getCurlHeader()),
 			?green("cam step2~n~p",[Res]),
@@ -354,6 +354,7 @@ waitStart(Count)->
 	case getUrl("http://192.168.54.1:60606/A0C9A02BA64D/Server0/ddd",60,getCurlHeader()) of
 		#{status:=ok}=Res ->?green("cam step 1response 200 ok!~n~p",[Res]),ok;
 		Error ->
-		?red("cam step 1 failed to respond sleep 30s and retry ~n~p",[Error]),
+		?red("cam step 1 failed to respond sleep 5s and retry ~n~p",[Error]),
+		timer:sleep(timer:seconds(5))
 			waitStart(Count-1)
 	end.
