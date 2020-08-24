@@ -112,6 +112,13 @@ handle_info({publish, #{topic := <<"ha/lumix/out/", DeviceId:12/binary, "/R", Ve
 				?ZigBEE_ClusterID_Level_Control=>#{<<16#0000:16>>=>0}	
 			},
 			#{},  lumix_actions),
+			%ep 4 more dummy buttons
+			devdb:addDeviceEP(BMAC, BMAC, <<4>>, ?ROC_PROFILEID, #{}, #{
+				<<16#0000:16>> => #{<<16#0004:16>> => <<"ROC">>, <<16#0005:16>> => <<"LUMIX_MQTT">>, <<16#0006:16>> => Version},
+				?ZigBEE_ClusterID_On_Off=>#{<<16#0000:16>>=>false},
+				?ZigBEE_ClusterID_Level_Control=>#{<<16#0000:16>>=>0}	
+			},
+			#{},  lumix_actions),
 
 			devWorker:spawn_worker(BMAC, BMAC),
 			gagent:send_new_device_report(BMAC);
