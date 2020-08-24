@@ -1,57 +1,54 @@
-//#include <Arduino.h>
-#if defined(ARDUINO_SAMD_MKRWIFI1010)
-  #include <WiFiNINA.h>
-#else if defined(ARDUINO_SAMD_MKR1000)
-  #include <WiFi101.h>
-#endif
+#include <WiFiNINA.h>
 #include <ArduinoOTA.h>
 #include <WiFiClient.h>
 #include <WiFiServer.h>
 #include <WiFiSSLClient.h>
 #include <WiFiUdp.h>
-//#include <SoftwareSerial.h>
-#include <SlowSoftSerial.h>
 #include <MQTT.h>
 
 #include <Ethernet.h>
 #include <SPI.h>
-#include <DHT.h>
 
 //#define DEBUG
 char major = '1';
 char minor = '0';
 
-#define AC_RX_PIN 4
-#define AC_TX_PIN 5
-#define ONEWIRE false
-
 #define MQTT_USERNAME "u"
 #define MQTT_PASSWORD "p"
 
-#define DHTPIN 2
-#define DHTTYPE DHT11
-DHT dht(DHTPIN, DHTTYPE);
 int ledpin = 6;
+int ptright = 7; //yellow right
+int ptleft = 10; //green left
+int ptup = 8; //black down
+int ptdown = 9; //blue up
+int cameraswitch = 1; //camera switch
+int ptswitch = 0; //camera switch
+
+int cdel = A1;
+int cdown = A2;
+int cleft = A3;
+int cset = A4;
+int cup = A5;
+int cright = A6;
 
 //wifi var init
-char ssid[] = "sheep";     //  your network SSID (name)
-char pass[] = ""; // your network password
+char ssid[] = "giammoro";     //  your network SSID (name)
+char pass[] = "giammoro51"; // your network password
 int keyIndex = 0;          // your network key Index number (needed only for WEP)
 int status = WL_IDLE_STATUS;
 
 byte mac[6]= {0x00, 0xAA, 0xBB, 0xCC, 0x55, 0x57};
-char id[12] = {'0','1','2','3','4','5','6','7','8','9','10','11'};
-char subPath[] = {'h', 'a', '/', 'l', 'u','m','i','x','/','i', 'n', '/','0','1','2','3','4','5','6','7','8','9','10','11','/', '#', '\0'};
-
+char id[12] = {'a','b','c','d','e','f','g','h','i','j','k','l'};
+//MQTT INBOUND path
+//the arduino subscribes to all messages published on this topic (erlang publishes actions here)
+//the 1,2,3 is just a place holder for the mac address
+//char subPath[] = {'h', 'a', '/', 'l', 'u','m','x','x','/','i', 'n', '/', 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,'/', '#', '\0'};
+char subPath[27] = {'h', 'a', '/','l','u','m','i','x','/','i','n','/', id[0],id[1],id[2],id[3],id[4],id[5],id[6],id[7],id[8],id[9],id[10],id[11],'/', '#', '\0'};
 
 WiFiClient net;
 //we get fancy compile errors if we remove this define!
 IPAddress MQTT_Server;
 //end wifi var init
-
-
-//serial
-SlowSoftSerial swSer(AC_RX_PIN, AC_TX_PIN, ONEWIRE);
 
 bool activeMode = true;
 bool transmitting = false;
@@ -67,10 +64,6 @@ unsigned char charBuffNext[13];
 boolean changeWaiting = 0;
 
 //Serial end
-char ac_room_temp = 0x00;
-char ts_room_temp = 0x00;
-int sensor_hum = 101;
-int sensor_temp = 26;
 int i;
 
 //debug bits
@@ -96,7 +89,7 @@ long airConditionIntervall = 1464; //min. time allowed between messages
 
 //MQTT
 MQTTClient MQTTClient;
-const char mqttServer[] = "192.168.178.201";
+const char mqttServer[] = "10.9.8.1";
 const int mqttServerPort = 1883; // broker mqtt port
 const char key[] = " ";          // broker key
 const char secret[] = " ";       // broker secret
@@ -106,29 +99,11 @@ const char device[] = " ";       // broker device identifie
 
 byte topicNumber = 12;
 
-void serialFlush()
-{
-  while (swSer.available() > 0)
-  {
-    char t = swSer.read();
-  }
-}
-
 void sendConfig()
 {
   charBuff[0] = 0xA8; // Slave
   //thats the write bit!
   bitWrite(charBuff[1], 0, 1);
-  if (activeMode)
-  {
-    charBuff[7] = sensor_temp/100;
-    Serial.print("active mode setting sensor temp:");
-    Serial.println(charBuff[7],DEC);
-  }
-  else
-  {    
-    charBuff[7] = ts_room_temp; //we send with the last known room temperature, since what we have in buffer might come from the AC unit
-  }  
 
   //Calculate the checksum for the data
   charBuff[12] = calcChecksum(charBuff);
@@ -144,9 +119,7 @@ void sendConfig()
   transmitting = true;
   lastTxTime = millis();
   //todo add ptz code here
-  //swSer.write(charBuff, 13);
   changeWaiting = 0;
-  
   publishSettings();
 }
 
@@ -188,7 +161,7 @@ void publishTopicValue(char *strString, char *value)
 
 void publishSettings()
 {
-  char strPath9[] = {'h', 'a', '/','l','u','m','i','x','/','o','u','t','/', id[0], id[1], id[2], id[3],id[4],id[5], id[6],id[7],id[8],id[9],id[10],id[11],'/', 'R', major, '.', minor, '\0'}; // raw State
+  char strPath9[] = {'h', 'a', '/','l','u','m','i','x','/','o','u','t','/', id[0],id[1],id[2],id[3],id[4],id[5],id[6],id[7],id[8],id[9],id[10],id[11],'/', 'R', major, '.', minor, '\0'}; // raw State
   char sendArray[19] = {
       charBuff[0],
       charBuff[1],
@@ -203,18 +176,38 @@ void publishSettings()
       charBuff[10],
       charBuff[11],
       charBuff[12],
-      highByte(sensor_temp),
-      lowByte(sensor_temp),
-      highByte(sensor_hum),
-      lowByte(sensor_hum),
-      ts_room_temp,
-      ac_room_temp};
+      charBuff[13],
+      charBuff[14],
+      charBuff[15],
+      charBuff[16],
+      charBuff[17],
+      charBuff[18]};
   MQTTClient.publish(strPath9, sendArray, 19);
 }
 
 // end LG functions***********************************************
 void setup()
 {
+
+  //PTZ setup
+  pinMode(ptright, OUTPUT); //yellow right
+  pinMode(ptup, OUTPUT); //blue up
+  pinMode(ptdown, OUTPUT); //black down
+  pinMode(ptleft, OUTPUT); //green left
+
+  pinMode(A1, OUTPUT);
+  pinMode(A2, OUTPUT);
+  pinMode(A3, OUTPUT);
+  pinMode(A4, OUTPUT);
+  pinMode(A5, OUTPUT);
+  pinMode(A6, OUTPUT);
+
+  pinMode(cameraswitch, OUTPUT); //green left
+  digitalWrite(cameraswitch, HIGH);
+
+  pinMode(ptswitch, OUTPUT); //green left
+  digitalWrite(ptswitch, HIGH);
+    
   Serial.begin(9600); // initialize serial communication
   Serial.print("Start Serial ");
 
@@ -230,27 +223,25 @@ void setup()
   // attempt to connect to Wifi network:
   while (status != WL_CONNECTED)
   {
-    digitalWrite(ledpin, LOW);
     Serial.print("Attempting to connect to Network named: ");
     Serial.println(ssid); // print the network name (SSID);
-    digitalWrite(ledpin, HIGH);
     // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
     status = WiFi.begin(ssid, pass);
     // wait 10 seconds for connection:
     delay(1000);
   }
   
- 
   // start the WiFi OTA library with internal (flash) based storage
   ArduinoOTA.begin(WiFi.localIP(), "Arduino", "password", InternalStorage);
   digitalWrite(ledpin, HIGH);
   MQTTClient.begin(mqttServer, net);
   MQTTClient.onMessage(callback);  
   Serial.println("wifi ready connecting mqtt....");
-  dht.begin();
   WiFi.macAddress(mac);
+  
   sprintf(id, "%.2X%.2X%.2X%.2X%.2X%.2X", mac[5], mac[4], mac[3], mac[2], mac[1], mac[0]);
   //set the id in the topic name
+  
   subPath[12]=id[0];
   subPath[13]=id[1];
   subPath[14]=id[2];
@@ -263,6 +254,7 @@ void setup()
   subPath[21]=id[9];
   subPath[22]=id[10];
   subPath[23]=id[11];
+  
   Serial.println(id);
   Serial.print("MAC: ");
   Serial.print(mac[5],HEX);
@@ -276,12 +268,14 @@ void setup()
   Serial.print(mac[1],HEX);
   Serial.print(":");
   Serial.println(mac[0],HEX);
-    mqttConnect();
-
+  mqttConnect();
+  
   Serial.println("starting PTZ connection");
   //todo add PTZ init code here
+  Serial.println(subPath);
    MQTTClient.subscribe(subPath,1);
    Serial.println("Done with setup! enjoy.....");
+   publishSettings();
 }
 
 void loop()
@@ -295,15 +289,11 @@ void loop()
   if ((currentMillis - previousMillis > waitForCommand) && (!changeWaiting) && (!transmitting) && (!charCount))
   {
     previousMillis = currentMillis;
-    sensor_hum = (int)dht.readHumidity() * 100;
-    sensor_temp = (int)dht.readTemperature() * 100;
     if (!MQTTClient.connected())
     {
+       Serial.print(MQTTClient.lastError());
        mqttConnect();
     }
-    
-  
-    
   }
 
   //this is has the following conditions that must be met, adapt if needed
@@ -314,14 +304,10 @@ void loop()
   //(currentMillis - previousMasterMillis > keepAliveInterval * 2) = we limit the time we block the overall network to *2 keepalive intervall 
   if ((millis() - lastCharTime > waitForCommand) && (changeWaiting) && (!transmitting) && (!charCount) && (currentMillis - previousMasterMillis < keepAliveInterval * 2))
   { 
-    
       //patched sendconfig should apply the ptz positions stored inside the MQTT callback
       sendConfig(); 
-   
   }
- 
   MQTTClient.loop();
- 
 }
 
 void printWifiStatus()
@@ -360,140 +346,215 @@ void callback(String &topic, String &payload)
   {
     previousMQTTCommand = millis();
   }
-  if (topic[21] == '/')
+
+Serial.println("THE ANSWER:");
+Serial.println(topic);
+
+Serial.println("THE ENDPOINT:");
+Serial.println(topic[25] && topic[26]);
+
+Serial.println("THE TOPIC:");
+Serial.println(topic[28]);
+
+Serial.println("THE PAYLOAD:");
+Serial.println(payload);
+ 
+  if (topic[24] == '/')
   {
-    if (topic[22] == 'Z')
+    if (topic[25] && topic[26] == '1')
     {
-      changeWaiting = 1;
-      //Serial.println("Zones");
-      if (payload[3] == '1')
+      if (topic[28] == 'P')
       {
-        bitWrite(charBuff[5], 3, 1);
-      }
-      else
-      {
-        bitWrite(charBuff[5], 3, 0);
-      }
-      if (payload[2] == '1')
-      {
-        bitWrite(charBuff[5], 4, 1);
-      }
-      else
-      {
-        bitWrite(charBuff[5], 4, 0);
-      }
-      if (payload[1] == '1')
-      {
-        bitWrite(charBuff[5], 5, 1);
-      }
-      else
-      {
-        bitWrite(charBuff[5], 5, 0);
-      }
-      if (payload[0] == '1')
-      {
-        bitWrite(charBuff[5], 6, 1);
-      }
-      else
-      {
-        bitWrite(charBuff[5], 6, 0);
-      }
-      //Serial.println(charBuff[6],BIN);
-    }
-    if (topic[22] == 'M')
-    {
-      changeWaiting = 1;
-      if (payload[0] == '0')
-      { //Cooling
-        bitWrite(charBuff[1], 2, 0);
-        bitWrite(charBuff[1], 3, 0);
-        bitWrite(charBuff[1], 4, 0);
-      }
-      if (payload[0] == '4')
-      { //Dehumidify
-        bitWrite(charBuff[1], 2, 1);
-        bitWrite(charBuff[1], 3, 0);
-        bitWrite(charBuff[1], 4, 0);
-      }
-      if (payload[0] == '3')
-      { //Fan only
-        bitWrite(charBuff[1], 2, 0);
-        bitWrite(charBuff[1], 3, 1);
-        bitWrite(charBuff[1], 4, 0);
-      }
-      if (payload[0] == '2')
-      { //Auto
-        bitWrite(charBuff[1], 2, 1);
-        bitWrite(charBuff[1], 3, 1);
-        bitWrite(charBuff[1], 4, 0);
-      }
-      if (payload[0] == '1')
-      { //Heating
-        bitWrite(charBuff[1], 2, 0);
-        bitWrite(charBuff[1], 3, 0);
-        bitWrite(charBuff[1], 4, 1);
+      
+        changeWaiting = 1;
+        if (payload[0] == '1')
+        {
+          bitWrite(charBuff[1], 1, 1); //on
+          digitalWrite(cameraswitch, LOW);
+          delay(200);
+          Serial.println("cam on");
+        }
+        else
+        {
+          bitWrite(charBuff[1], 1, 0); //off
+          digitalWrite(cameraswitch, HIGH);
+          delay(200);
+          Serial.println("cam off");
+        }
       }
     }
-    if (topic[22] == 'T')
+    if (topic[25] && topic[26] == '2')
     {
-      changeWaiting = 1;
-      const char tmpChar[3] = {payload[0], payload[1], '\0'}; // Convert it to a null terminated string.
-      unsigned int tempval = atoi(tmpChar) - 15;              // Take off the offset of 15 Degrees.
-      bitWrite(charBuff[6], 0, bitRead(tempval, 0));          // Write the bits
-      bitWrite(charBuff[6], 1, bitRead(tempval, 1));
-      bitWrite(charBuff[6], 2, bitRead(tempval, 2));
-      bitWrite(charBuff[6], 3, bitRead(tempval, 3));
+      if (topic[28] == 'L')
+      {
+        changeWaiting = 1;
+        int pan = payload.toInt();
+        if (pan == 128)
+        {
+            Serial.println("panning stopped");
+            digitalWrite(ptup, LOW);
+            digitalWrite(ptdown, LOW);
+
+        }
+        if (pan < 128)
+        {
+            Serial.println("panning up");
+            digitalWrite(ptdown, LOW);
+            digitalWrite(ptup, HIGH);
+        }
+        if (pan > 128)
+        {
+            Serial.println("panning down");
+            digitalWrite(ptup, LOW);
+            digitalWrite(ptdown, HIGH);
+        }      
+      }
+      
+      if (topic[28] == 'P')
+      {
+      
+        changeWaiting = 1;
+        if (payload[0] == '1')
+        {
+          bitWrite(charBuff[1], 1, 1); //on
+          
+          //start traversing to wifi
+          digitalWrite(cset, HIGH);
+          delay(100);
+          digitalWrite(cset, LOW);  
+          delay(100);
+          Serial.println("set");
+                    
+          digitalWrite(cright, HIGH);
+          delay(100);
+          digitalWrite(cright, LOW);  
+          delay(100);
+          Serial.println("move right");        
+
+          digitalWrite(cdown, HIGH);
+          delay(100);
+          digitalWrite(cdown, LOW);  
+          delay(100);
+          Serial.println("move down");        
+       
+          digitalWrite(cdown, HIGH);
+          delay(100);
+          digitalWrite(cdown, LOW);  
+          delay(100);
+          Serial.println("move down");        
+
+          digitalWrite(cdown, HIGH);
+          delay(100);
+          digitalWrite(cdown, LOW);  
+          delay(100);
+          Serial.println("move down"); 
+
+          digitalWrite(cdown, HIGH);
+          delay(100);
+          digitalWrite(cdown, LOW);  
+          delay(100);
+          Serial.println("move down"); 
+
+          digitalWrite(cset, HIGH);
+          delay(100);
+          digitalWrite(cset, LOW);  
+          delay(100);
+          Serial.println("set");
+
+          Serial.println("waiting for camera");
+          delay(3000); // wait for Wifi Menu
+          
+          digitalWrite(cset, HIGH);
+          delay(100);
+          digitalWrite(cset, LOW);  
+          delay(100);
+          Serial.println("set");          
+
+          digitalWrite(cset, HIGH);
+          delay(100);
+          digitalWrite(cset, LOW);  
+          delay(100);
+          Serial.println("set");          
+
+          digitalWrite(cset, HIGH);
+          delay(100);
+          digitalWrite(cset, LOW);  
+          delay(100);
+          Serial.println("set");   
+
+          digitalWrite(cset, HIGH);
+          delay(100);
+          digitalWrite(cset, LOW);  
+          delay(100);
+          Serial.println("set");   
+
+          digitalWrite(cset, HIGH);
+          delay(100);
+          digitalWrite(cset, LOW);  
+          delay(100);
+          Serial.println("set");   
+
+        }
+        else
+        {
+          bitWrite(charBuff[1], 1, 0); //off
+          digitalWrite(cdel, HIGH);
+          delay(100); 
+          digitalWrite(cdel, LOW);    
+          delay(100); 
+          digitalWrite(cdel, HIGH);
+          delay(100); 
+          digitalWrite(cdel, LOW);    
+          delay(100); 
+          Serial.println("reset menu");
+        }
+      }
     }
-    if (topic[22] == 'F')
+    if (topic[25] && topic[26] == '3')
     {
-      changeWaiting = 1;
-      if (payload[0] == '1')
-      { //Low
-        bitWrite(charBuff[1], 5, 0);
-        bitWrite(charBuff[1], 6, 0);
-      }
-      if (payload[0] == '2')
-      { //Med
-        bitWrite(charBuff[1], 5, 1);
-        bitWrite(charBuff[1], 6, 0);
-      }
-      if (payload[0] == '3')
-      { //High
-        bitWrite(charBuff[1], 5, 0);
-        bitWrite(charBuff[1], 6, 1);
-      }
-      if (payload[0] == '0')
-      { //auto
-        bitWrite(charBuff[1], 5, 1);
-        bitWrite(charBuff[1], 6, 1);
-      }
-    }
-    if (topic[22] == 'P')
-    {
-      changeWaiting = 1;
-      //Serial.println("Power");
-      if (payload[0] == '1')
+      if (topic[28] == 'L')
       {
-        bitWrite(charBuff[1], 1, 1);
+        changeWaiting = 1;
+        int pan = payload.toInt();
+        if (pan == 128)
+        {
+            Serial.println("panning stopped");
+            digitalWrite(ptright, LOW);
+            digitalWrite(ptleft, LOW);
+
+        }
+        if (pan < 128)
+        {
+            Serial.println("panning left");
+            digitalWrite(ptright, LOW);
+            digitalWrite(ptleft, HIGH);
+        }
+        if (pan > 128)
+        {
+            Serial.println("panning right");
+            digitalWrite(ptleft, LOW);
+            digitalWrite(ptright, HIGH);
+        }      
       }
-      else
+      
+      if (topic[28] == 'P')
       {
-        bitWrite(charBuff[1], 1, 0);
+      
+        changeWaiting = 1;
+        if (payload[0] == '1')
+        {
+          bitWrite(charBuff[1], 1, 1); //on
+          digitalWrite(ptswitch, LOW);
+          Serial.println("pt on");
+        }
+        else
+        {
+          bitWrite(charBuff[1], 1, 0); //off
+          digitalWrite(ptswitch, HIGH);
+          Serial.println("pt off");
+        }
       }
-    }
-    if (topic[22] == 'J')
-    {
-      changeWaiting = 1;
-      //Serial.println("Jet");
-      if (payload[0] == '1')
-      {
-        bitWrite(charBuff[1], 7, 1);
-      }
-      else
-      {
-        bitWrite(charBuff[1], 7, 0);
-      }
-    }
+    } 
   }
   //make sure we send the message twice and discard any old retransmission
   reTransmitPending = 0;
