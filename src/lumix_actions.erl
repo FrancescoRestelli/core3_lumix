@@ -355,6 +355,6 @@ waitStart(Count)->
 		#{status:=ok}=Res ->?green("cam step 1response 200 ok!~n~p",[Res]),ok;
 		Error ->
 		?red("cam step 1 failed to respond sleep 5s and retry ~n~p",[Error]),
-		timer:sleep(timer:seconds(5))
+		timer:sleep(timer:seconds(5)),
 			waitStart(Count-1)
 	end.
