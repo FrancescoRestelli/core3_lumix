@@ -14,7 +14,7 @@
 
 -export([
 	sendActionCmd/5,
-	sendGeneralCmd/5]).
+	sendGeneralCmd/5,getUrl/3]).
 
 
 %% ------------------------------------Dev Worker API -------------------------------------------------------
@@ -257,8 +257,24 @@ sendGeneralCmd(_, _MAC, _, #{<<"clusterId">> := ClusterID, <<"cmdId">> := CMDID}
 		status => error
 	}, State}.
 
+%EP 1 override we enable the wifi apcli & wait for the cam
+%curl -s "http://192.168.54.1:60606/A0C9A02BA64D/Server0/ddd"
+%curl -s "http://192.168.54.1/cam.cgi?mode=accctrl&type=req_acc&value=4D454930-0100-1000-8000-A0C9A02BA64D&value2=OZOM"
+%curl -s "http://192.168.54.1/cam.cgi?mode=getstate"
+clusterCmds(MAC, NodeID, EP, State, _Json, ?ZigBEE_ClusterID_On_Off, ?ZigBEE_ClusterID_On_Off_CMD_ON) ->
+	SMAC = utils_data_format:bin_to_hex(MAC),
+	SEP = utils_data_format:bin_to_hex(EP),
+	?green("CluserCmd MAC: ~p NodeID: ~p EP: ~p ClusterID: ~p CmdID: ~p", [SMAC, NodeID, EP, onoff, on]),
+	TS = list_to_binary(integer_to_list(trunc(utils_time:timestamp(integer) / 1000000))),
+	lumix_multiplex:send_to_device(<<SMAC/binary,"/",SEP/binary,"/P">>, <<"1">>),
+	rtrace:on(system_cmd),
+	utils_hw:system_cmd("apcli.sh LUMIX",60),
+	rtrace:off(system_cmd),
+	initCam(),	
+	{<<0>>, State};
 
 
+%apcli.sh LUMIX
 clusterCmds(MAC, NodeID, EP, State, _Json, ?ZigBEE_ClusterID_On_Off, ?ZigBEE_ClusterID_On_Off_CMD_ON) ->
 	SMAC = utils_data_format:bin_to_hex(MAC),
 	SEP = utils_data_format:bin_to_hex(EP),
@@ -294,3 +310,50 @@ clusterCmds(MAC, NodeID, EP, State, _Json, BClusterID, BCMDID, BValue) ->
 	?red("ClusterCmd MAC ~p NodeID: ~p EP: ~p ClusterID: ~p CmdID: ~p Value: ~p",
 		[MAC, NodeID, EP, BClusterID, BCMDID, utils_data_format:bin_to_hex(BValue)]),
 	{<<BCMDID/binary>>, State}.
+
+
+getUrl(Furl, Timeout, Headers) ->
+  ?blue("URL <c~p/>", [Furl]),
+  case httpc:request(get, {utils_data_format:ensure_list(Furl), Headers},
+    [{timeout, timer:seconds(Timeout)}], []) of
+
+    {ok, {{_, 200, _}, _, Response}} ->
+     #{status=>ok,data=>Response};
+    Error ->
+      ?red("get Error~n~p", [Error]),
+      #{status=>error, data=>Error}
+  end.
+
+
+getCurlHeader()->
+	[
+		{"user-agent", "curl/7.38.0"},
+		{"accept", "*/*"}
+		
+	].
+
+
+initCam()->
+	case waitStart(0) of
+		ok->			
+			Res=getUrl("http://192.168.54.1/cam.cgi?mode=accctrl&type=req_acc&value=4D454930-0100-1000-8000-A0C9A02BA64D&value2=OZOM",60,getCurlHeader()),
+			?green("cam step2~n~p",[Res]),
+			Res1=getUrl("http://192.168.54.1/cam.cgi?mode=getstate",60,getCurlHeader()),
+			?green("cam step3~n~p",[Res1]);
+		Err->?red("cam not ready abort............")	
+	end.
+
+
+	
+
+waitStart(0)->
+ 	?red("camera did not wake up within timeframe.... todo"),
+	 failed;
+
+waitStart(Count)->
+	case getUrl("http://192.168.54.1:60606/A0C9A02BA64D/Server0/ddd",60,getCurlHeader()) of
+		#{status:=ok}=Res ->?green("cam step 1response 200 ok!~n~p",[Res]),ok;
+		Error ->
+		?red("cam step 1 failed to respond sleep 30s and retry ~n~p",[Error]),
+			waitStart(Count-1)
+	end.
