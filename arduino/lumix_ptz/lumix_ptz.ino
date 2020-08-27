@@ -23,6 +23,10 @@ int ptup = 8; //black down
 int ptdown = 9; //blue up
 int cameraswitch = 1; //camera switch
 int ptswitch = 0; //camera switch
+int buttondelay = 90;
+int waitCameraLong = 5000;
+int waitCamera = 2000;
+int camIntstep = 0;
 
 int cdel = A1;
 int cdown = A2;
@@ -52,6 +56,8 @@ IPAddress MQTT_Server;
 
 bool activeMode = true;
 bool transmitting = false;
+bool activatingCamera = false;
+bool startbit = false;
 byte reTransmitPending = 0; //0=false 1=true 2=done
 volatile long lastCharTime = 0;
 volatile long lastTxTime = 0;
@@ -80,11 +86,14 @@ byte zoneByte = 0;
 
 //intervals
 long previousMillis = 0;       // will store last time loop ran
+long previousCamMillis = 0;
 long previousMasterMillis = 0; // will store last a message from the master is received
 //long interval = 1000;           // interval at which to limit loop
 long keepAliveInterval = 20000; // interval at which to send keepalive packets to the AC in active mode (no other master)
 long previousMQTTCommand = 0;
 long waitForCommand = 1464; //min. time allowed between messages
+long waitLongForCommand = 3464; //min. time allowed between messages
+long waitExtraLongForCommand = 7464; //min. time allowed between messages
 long airConditionIntervall = 1464; //min. time allowed between messages
 
 //MQTT
@@ -120,6 +129,11 @@ void sendConfig()
   lastTxTime = millis();
   //todo add ptz code here
   changeWaiting = 0;
+
+
+
+
+  
   publishSettings();
 }
 
@@ -296,6 +310,205 @@ void loop()
     }
   }
 
+
+
+if (activatingCamera) {
+  
+          if(camIntstep == 0){
+            //start traversing menu to wifi
+            if(!startbit){
+              digitalWrite(cset, HIGH); //enter menu
+              startbit = true;
+              previousCamMillis = millis();
+            }
+            if (currentMillis - previousCamMillis > buttondelay){
+              digitalWrite(cset, LOW);  
+              Serial.println("set");
+              camIntstep++;
+              startbit = false;
+            }
+          }
+
+          if(camIntstep == 1){
+            if(!startbit){
+              digitalWrite(cdown, HIGH); //enter menu
+              startbit = true;
+              previousCamMillis = millis();
+            }
+            if (currentMillis - previousCamMillis > buttondelay){
+              digitalWrite(cdown, LOW);  
+              Serial.println("move right");        
+              camIntstep++;
+              startbit = false;
+            }
+          }
+
+          if(camIntstep == 2){
+            if(!startbit){
+              digitalWrite(cdown, HIGH); //enter menu
+              startbit = true;
+              previousCamMillis = millis();
+            }
+            if (currentMillis - previousCamMillis > buttondelay){
+              digitalWrite(cdown, LOW);  
+              Serial.println("move down");        
+              camIntstep++;
+              startbit = false;
+            }
+          }
+
+          if(camIntstep == 3){                 
+            if(!startbit){
+              digitalWrite(cdown, HIGH); //enter menu
+              startbit = true;
+              previousCamMillis = millis();
+            }
+            if (currentMillis - previousCamMillis > buttondelay){
+              digitalWrite(cdown, LOW);  
+              Serial.println("move down");        
+              camIntstep++;
+              startbit = false;
+            }
+          }
+
+          if(camIntstep == 4){
+            if(!startbit){
+              digitalWrite(cdown, HIGH); //enter menu
+              startbit = true;
+              previousCamMillis = millis();
+            }
+            if (currentMillis - previousCamMillis > buttondelay){
+              digitalWrite(cdown, LOW);  
+              Serial.println("move down"); 
+              camIntstep++;
+              startbit = false;
+            }
+          }
+
+          if(camIntstep == 5){
+            if(!startbit){
+              digitalWrite(cdown, HIGH); //enter menu
+              startbit = true;
+              previousCamMillis = millis();
+            }
+            if (currentMillis - previousCamMillis > buttondelay){
+              digitalWrite(cdown, LOW);  
+              Serial.println("move down");
+              camIntstep++;
+              startbit = false;
+            }
+          }
+
+          if(camIntstep == 6){
+            if(!startbit){
+              digitalWrite(cdown, HIGH); //enter menu
+              startbit = true;
+              previousCamMillis = millis();
+            }
+            if (currentMillis - previousCamMillis > buttondelay){
+              digitalWrite(cdown, LOW);  
+              Serial.println("move down");
+              camIntstep++;
+              startbit = false;
+            }
+          }
+          
+          if(camIntstep == 7){
+            if(!startbit){
+              digitalWrite(cset, HIGH); //enter menu
+              startbit = true;
+              previousCamMillis = millis();
+            }
+            if (currentMillis - previousCamMillis > buttondelay){
+              digitalWrite(cset, LOW);  
+              Serial.println("set");
+              camIntstep++;
+              startbit = false;
+            }
+          }
+
+          if(camIntstep == 8){
+            if(!startbit){
+              startbit = true;
+              previousCamMillis = millis();
+            }
+            if (currentMillis - previousCamMillis > waitCameraLong){
+              Serial.println("waiting 5000ms");
+              camIntstep++;
+              startbit = false;
+            }
+          }
+
+          if(camIntstep == 9){
+            if(!startbit){
+              digitalWrite(cset, HIGH); //enter menu
+              startbit = true;
+              previousCamMillis = millis();
+            }
+            if (currentMillis - previousCamMillis > buttondelay){
+              digitalWrite(cset, LOW);  
+              Serial.println("set");
+              camIntstep++;
+              startbit = false;
+            }
+          }
+
+          if(camIntstep == 10){
+            if(!startbit){
+              startbit = true;
+              previousCamMillis = millis();
+            }
+            if (currentMillis - previousCamMillis > waitCamera){
+              Serial.println("waiting 5000ms");
+              camIntstep++;
+              startbit = false;
+            }
+          }
+
+          if(camIntstep == 11){
+            if(!startbit){
+              digitalWrite(cset, HIGH); //enter menu
+              startbit = true;
+              previousCamMillis = millis();
+            }
+            if (currentMillis - previousCamMillis > buttondelay){
+              digitalWrite(cset, LOW);  
+              Serial.println("set");
+              camIntstep++;
+              startbit = false;
+            }
+          }
+
+          if(camIntstep == 12){
+            if(!startbit){
+              startbit = true;
+              previousCamMillis = millis();
+            }
+            if (currentMillis - previousCamMillis > waitCamera){
+              Serial.println("waiting 5000ms");
+              camIntstep++;
+              startbit = false;
+            }
+          }
+
+          if(camIntstep == 13){
+            if(!startbit){
+              digitalWrite(cset, HIGH); //enter menu
+              startbit = true;
+              previousCamMillis = millis();
+            }
+            if (currentMillis - previousCamMillis > buttondelay){
+              digitalWrite(cset, LOW);  
+              Serial.println("set");
+              activatingCamera = false;
+              camIntstep++;
+              startbit = false;
+            }
+          }                    
+          
+} 
+
+
   //this is has the following conditions that must be met, adapt if needed
   //lastCharTime = ensure we have a space of 1.4s between each message that appears to be the default.
   //changeWaiting = there must be a pending change from sendConfig()
@@ -341,7 +554,7 @@ void callback(String &topic, String &payload)
   Serial.print(payload);
   Serial.print(" ");   
   Serial.println("mqtt callback");
-  // If there has been no MQTT message received for a bit...
+  // If there has been no MQTT message received for a while...
   if ((millis() - previousMQTTCommand > waitForCommand) && (changeWaiting == 0))
   {
     previousMQTTCommand = millis();
@@ -363,6 +576,18 @@ Serial.println(payload);
   {
     if (topic[25] && topic[26] == '1')
     {
+      if (topic[28] == 'L')
+      {
+        changeWaiting = 1;
+        int pan = payload.toInt();
+        if (pan == 255) //engage wifi
+        {
+          Serial.println("start Wifi");
+          digitalWrite(cset, HIGH);
+          digitalWrite(cset, LOW);  
+          Serial.println("set"); 
+        }   
+      }
       if (topic[28] == 'P')
       {
       
@@ -371,14 +596,12 @@ Serial.println(payload);
         {
           bitWrite(charBuff[1], 1, 1); //on
           digitalWrite(cameraswitch, LOW);
-          delay(200);
           Serial.println("cam on");
         }
         else
         {
           bitWrite(charBuff[1], 1, 0); //off
           digitalWrite(cameraswitch, HIGH);
-          delay(200);
           Serial.println("cam off");
         }
       }
@@ -417,95 +640,15 @@ Serial.println(payload);
         if (payload[0] == '1')
         {
           bitWrite(charBuff[1], 1, 1); //on
-          
-          //start traversing to wifi
-          digitalWrite(cset, HIGH);
-          delay(100);
-          digitalWrite(cset, LOW);  
-          delay(100);
-          Serial.println("set");
-                    
-          digitalWrite(cright, HIGH);
-          delay(100);
-          digitalWrite(cright, LOW);  
-          delay(100);
-          Serial.println("move right");        
-
-          digitalWrite(cdown, HIGH);
-          delay(100);
-          digitalWrite(cdown, LOW);  
-          delay(100);
-          Serial.println("move down");        
-       
-          digitalWrite(cdown, HIGH);
-          delay(100);
-          digitalWrite(cdown, LOW);  
-          delay(100);
-          Serial.println("move down");        
-
-          digitalWrite(cdown, HIGH);
-          delay(100);
-          digitalWrite(cdown, LOW);  
-          delay(100);
-          Serial.println("move down"); 
-
-          digitalWrite(cdown, HIGH);
-          delay(100);
-          digitalWrite(cdown, LOW);  
-          delay(100);
-          Serial.println("move down"); 
-
-          digitalWrite(cset, HIGH);
-          delay(100);
-          digitalWrite(cset, LOW);  
-          delay(100);
-          Serial.println("set");
-
-          Serial.println("waiting for camera");
-          delay(3000); // wait for Wifi Menu
-          
-          digitalWrite(cset, HIGH);
-          delay(100);
-          digitalWrite(cset, LOW);  
-          delay(100);
-          Serial.println("set");          
-
-          digitalWrite(cset, HIGH);
-          delay(100);
-          digitalWrite(cset, LOW);  
-          delay(100);
-          Serial.println("set");          
-
-          digitalWrite(cset, HIGH);
-          delay(100);
-          digitalWrite(cset, LOW);  
-          delay(100);
-          Serial.println("set");   
-
-          digitalWrite(cset, HIGH);
-          delay(100);
-          digitalWrite(cset, LOW);  
-          delay(100);
-          Serial.println("set");   
-
-          digitalWrite(cset, HIGH);
-          delay(100);
-          digitalWrite(cset, LOW);  
-          delay(100);
-          Serial.println("set");   
+          activatingCamera = true;
+          Serial.println("activationg wifi");
 
         }
         else
         {
           bitWrite(charBuff[1], 1, 0); //off
-          digitalWrite(cdel, HIGH);
-          delay(100); 
-          digitalWrite(cdel, LOW);    
-          delay(100); 
-          digitalWrite(cdel, HIGH);
-          delay(100); 
-          digitalWrite(cdel, LOW);    
-          delay(100); 
+          camIntstep = 0;
+          activatingCamera = false;
           Serial.println("reset menu");
         }
       }
