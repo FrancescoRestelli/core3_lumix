@@ -167,7 +167,9 @@ cluster_default(?ROC_CLUSTER_ID_CAMERA_VIDEO) ->
 		<<16#0006:16>> => false,
 		<<16#0008:16>> => false,
 		<<16#000A:16>> => false,
-		<<16#0010:16>> => 0
+		<<16#0010:16>> => 0,
+		<<16#FF00:16>> => 1,
+		<<16#FF01:16>> => 1
 	};
 
 cluster_default(?ROC_CLUSTER_ID_CAMERA_CONTROL) ->
